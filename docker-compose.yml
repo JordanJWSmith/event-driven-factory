@@ -11,10 +11,20 @@ services:
     container_name: kafka
     ports:
       - "9092:9092"
+      - "9999:9990"
     environment: 
+      KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS:   PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9999
     depends_on:
       - zookeeper
+
+  kafka-exporter:
+    image: wurstmeister/kafka-exporter
+    ports:
+      - "9308:9308"
+    environment:
+      KAFKA_BROKERS: "kafka:9092"
