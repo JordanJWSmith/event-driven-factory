@@ -54,5 +54,5 @@ async def process_message():
         await consumer.stop()
 
 
-if __name__ == "__main__":
-    asyncio.run(process_message())
+# if __name__ == "__main__":
+#     asyncio.run(process_message())

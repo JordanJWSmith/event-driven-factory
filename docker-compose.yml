@@ -23,8 +23,22 @@ services:
       - zookeeper
 
   kafka-exporter:
-    image: wurstmeister/kafka-exporter
+    image: danielqsj/kafka-exporter
     ports:
       - "9308:9308"
     environment:
       KAFKA_BROKERS: "kafka:9092"
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-data:/var/lib/grafana

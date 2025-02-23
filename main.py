@@ -1,8 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
+from consumer import process_message
+from prometheus_fastapi_instrumentator import Instrumentator # type: ignore
 from contextlib import asynccontextmanager
 import logging
-from aiokafka import AIOKafkaProducer, AIOKafkaConsumer # type: ignore
+from aiokafka import AIOKafkaProducer # type: ignore
 import asyncio
 import json
 import sqlite3
@@ -11,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 KAFKA_TOPIC = "cnc_sensor_data"
 KAFKA_BOOTSTRAP_SERVER = "localhost:9092"
+
+active_connections = set()
 
 conn = sqlite3.connect("sensor_data.db", check_same_thread=False)
 cursor = conn.cursor()
@@ -34,7 +38,18 @@ async def lifespan(app: FastAPI):
         logger.info("Kafka Producer stopped ❌")
 
 app = FastAPI(lifespan=lifespan)
+Instrumentator().instrument(app).expose(app)
 
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    active_connections.add(websocket)
+
+    try:
+        while True:
+            await asyncio.sleep(1)
+    except WebSocketDisconnect:
+        active_connections.remove(websocket)
 
 class SensorData(BaseModel):
     machine_id: str
