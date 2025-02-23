@@ -42,3 +42,19 @@ services:
       - "3000:3000"
     volumes:
       - ./grafana-data:/var/lib/grafana
+
+  timescaledb:
+    image: timescale/timescaledb-ha:pg15
+    container_name: timescaledb
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: sensor_data
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+
+volumes:
+  timescale_data:
