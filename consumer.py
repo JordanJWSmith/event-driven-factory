@@ -2,6 +2,7 @@ import asyncio
 import json
 import sqlite3
 import logging
+import psycopg2
 from aiokafka import AIOKafkaConsumer #type: ignore
 
 logger = logging.getLogger(__name__)
@@ -30,13 +31,29 @@ async def process_message():
                 temperature = data['temperature']
                 vibration = data['vibration']
 
-                with sqlite3.connect("sensor_data.db") as conn:
-                    cursor = conn.cursor()
-                    insert_sql = "INSERT INTO sensor_data (machine_id, temperature, vibration) values (?, ?, ?)"
-                    cursor.execute(insert_sql, (machine_id, temperature, vibration))
+                # with sqlite3.connect("sensor_data.db") as conn:
+                #     cursor = conn.cursor()
+                #     insert_sql = "INSERT INTO sensor_data (machine_id, temperature, vibration) values (?, ?, ?)"
+                #     cursor.execute(insert_sql, (machine_id, temperature, vibration))
+                #     conn.commit()
+
+                with psycopg2.connect(
+                    dbname="sensor_data",
+                    user="admin",
+                    password="admin",
+                    host="localhost",
+                    port="5432"
+                ) as conn:
+                    cursor = conn.connect()
+
+                    cursor.execute("""
+                        INSERT INTO sensor_data (machine_id, temperature, vibration)
+                        VALUES (%s, %s, %s)
+                        """, 
+                        (machine_id, temperature, vibration))
                     conn.commit()
 
-                logger.info(f"✅ Inserted data: {data}")
+                    logger.info(f"✅ Inserted data: {data}")
 
                 if temperature > 100 or vibration > 5.0:
                     logger.warning(f"⚠️ Alert: Machine {machine_id} is overheating or vibrating too much!")
